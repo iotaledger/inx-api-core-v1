@@ -141,9 +141,7 @@ func (s *DatabaseServer) balanceByEd25519Address(c echo.Context) (*addressBalanc
 	return s.ed25519Balance(address)
 }
 
-func (s *DatabaseServer) outputsResponse(address iotago.Address, includeSpent bool, filterType *iotago.OutputType) (*addressOutputsResponse, error) {
-	maxResults := s.RestAPILimitsMaxResults
-
+func (s *DatabaseServer) outputsResponse(address iotago.Address, includeSpent bool, filterType *iotago.OutputType, maxResults int) (*addressOutputsResponse, error) {
 	opts := []utxo.IterateOption{
 		utxo.FilterAddress(address),
 	}
@@ -190,7 +188,7 @@ func (s *DatabaseServer) outputsResponse(address iotago.Address, includeSpent bo
 	}, nil
 }
 
-func (s *DatabaseServer) outputsIDsByBech32Address(c echo.Context) (*addressOutputsResponse, error) {
+func (s *DatabaseServer) outputIDsByAddress(c echo.Context, address iotago.Address) (*addressOutputsResponse, error) {
 	// error is ignored because it returns false in case it can't be parsed
 	includeSpent, _ := strconv.ParseBool(strings.ToLower(c.QueryParam("include-spent")))
 
@@ -209,38 +207,9 @@ func (s *DatabaseServer) outputsIDsByBech32Address(c echo.Context) (*addressOutp
 		filteredType = &outputType
 	}
 
-	bech32Address, err := restapi.ParseBech32AddressParam(c, s.Bech32HRP)
-	if err != nil {
-		return nil, err
-	}
+	maxResults := s.maxResultsFromContext(c)
 
-	return s.outputsResponse(bech32Address, includeSpent, filteredType)
-}
-
-func (s *DatabaseServer) outputsIDsByEd25519Address(c echo.Context) (*addressOutputsResponse, error) {
-	// error is ignored because it returns false in case it can't be parsed
-	includeSpent, _ := strconv.ParseBool(strings.ToLower(c.QueryParam("include-spent")))
-
-	var filteredType *iotago.OutputType
-	typeParam := strings.ToLower(c.QueryParam("type"))
-	if len(typeParam) > 0 {
-		outputTypeInt, err := strconv.ParseInt(typeParam, 10, 32)
-		if err != nil {
-			return nil, errors.WithMessagef(restapi.ErrInvalidParameter, "invalid type: %s, error: unknown output type", typeParam)
-		}
-		outputType := iotago.OutputType(outputTypeInt)
-		if outputType != iotago.OutputSigLockedSingleOutput && outputType != iotago.OutputSigLockedDustAllowanceOutput {
-			return nil, errors.WithMessagef(restapi.ErrInvalidParameter, "invalid type: %s, error: unknown output type", typeParam)
-		}
-		filteredType = &outputType
-	}
-
-	address, err := restapi.ParseEd25519AddressParam(c)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.outputsResponse(address, includeSpent, filteredType)
+	return s.outputsResponse(address, includeSpent, filteredType, maxResults)
 }
 
 func (s *DatabaseServer) treasury(_ echo.Context) (*treasuryResponse, error) {
