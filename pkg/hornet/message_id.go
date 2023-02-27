@@ -38,6 +38,15 @@ func MessageIDFromHex(hexString string) (MessageID, error) {
 	return MessageID(b), nil
 }
 
+// MessageIDFromMapKey creates a MessageID from a map key representation.
+func MessageIDFromMapKey(mapKey string) MessageID {
+	if len(mapKey) != iotago.MessageIDLength {
+		panic(fmt.Sprintf("unknown messageID length (%d)", len(mapKey)))
+	}
+
+	return MessageID(mapKey)
+}
+
 // MessageIDFromSlice creates a MessageID from a byte slice.
 func MessageIDFromSlice(b []byte) MessageID {
 

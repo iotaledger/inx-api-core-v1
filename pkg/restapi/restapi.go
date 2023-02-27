@@ -33,6 +33,11 @@ const (
 )
 
 var (
+	// QueryParameterPageSize is used to define the page size for the results.
+	QueryParameterPageSize = "pageSize"
+)
+
+var (
 	// ErrInvalidParameter defines the invalid parameter error.
 	ErrInvalidParameter = echo.NewHTTPError(http.StatusBadRequest, "invalid parameter")
 )

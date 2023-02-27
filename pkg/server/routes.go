@@ -83,6 +83,16 @@ const (
 	// GET returns the outputIDs for all outputs of this address (optional query parameters: "include-spent").
 	RouteAddressEd25519Outputs = "/addresses/ed25519/:" + restapipkg.ParameterAddress + "/outputs"
 
+	// RouteAddressBech32History is the route for getting the transaction history of an address.
+	// The address must be encoded in bech32.
+	// GET returns the tx-history of this address.
+	RouteAddressBech32History = "/addresses/:" + restapipkg.ParameterAddress + "/tx-history"
+
+	// RouteAddressEd25519History is the route for getting the transaction history of an ed25519 address.
+	// The ed25519 address must be encoded in hex.
+	// GET returns the tx-history of this address.
+	RouteAddressEd25519History = "/addresses/ed25519/:" + restapipkg.ParameterAddress + "/tx-history"
+
 	// RouteTreasury is the route for getting the current treasury output.
 	RouteTreasury = "/treasury"
 
@@ -152,7 +162,7 @@ func (s *DatabaseServer) configureRoutes(routeGroup echoswagger.ApiGroup) {
 			return err
 		}
 
-		resp, err := s.childrenIDsByMessageID(messageID)
+		resp, err := s.childrenIDsByMessageID(c, messageID)
 		if err != nil {
 			return err
 		}
@@ -217,7 +227,7 @@ func (s *DatabaseServer) configureRoutes(routeGroup echoswagger.ApiGroup) {
 			return err
 		}
 
-		resp, err := s.childrenIDsByMessageID(messageID)
+		resp, err := s.childrenIDsByMessageID(c, messageID)
 		if err != nil {
 			return err
 		}
@@ -271,7 +281,12 @@ func (s *DatabaseServer) configureRoutes(routeGroup echoswagger.ApiGroup) {
 	})
 
 	routeGroup.GET(RouteAddressBech32Outputs, func(c echo.Context) error {
-		resp, err := s.outputsIDsByBech32Address(c)
+		address, err := restapipkg.ParseBech32AddressParam(c, s.Bech32HRP)
+		if err != nil {
+			return err
+		}
+
+		resp, err := s.outputIDsByAddress(c, address)
 		if err != nil {
 			return err
 		}
@@ -280,7 +295,40 @@ func (s *DatabaseServer) configureRoutes(routeGroup echoswagger.ApiGroup) {
 	})
 
 	routeGroup.GET(RouteAddressEd25519Outputs, func(c echo.Context) error {
-		resp, err := s.outputsIDsByEd25519Address(c)
+		address, err := restapipkg.ParseEd25519AddressParam(c)
+		if err != nil {
+			return err
+		}
+
+		resp, err := s.outputIDsByAddress(c, address)
+		if err != nil {
+			return err
+		}
+
+		return restapipkg.JSONResponse(c, http.StatusOK, resp)
+	})
+
+	routeGroup.GET(RouteAddressBech32History, func(c echo.Context) error {
+		address, err := restapipkg.ParseBech32AddressParam(c, s.Bech32HRP)
+		if err != nil {
+			return err
+		}
+
+		resp, err := s.transactionHistoryByAddress(c, address)
+		if err != nil {
+			return err
+		}
+
+		return restapipkg.JSONResponse(c, http.StatusOK, resp)
+	})
+
+	routeGroup.GET(RouteAddressEd25519History, func(c echo.Context) error {
+		address, err := restapipkg.ParseEd25519AddressParam(c)
+		if err != nil {
+			return err
+		}
+
+		resp, err := s.transactionHistoryByAddress(c, address)
 		if err != nil {
 			return err
 		}
