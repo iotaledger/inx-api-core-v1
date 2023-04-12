@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/inx-api-core-v1/pkg/hornet"
 	"github.com/iotaledger/inx-api-core-v1/pkg/restapi"
 	iotago "github.com/iotaledger/iota.go/v2"

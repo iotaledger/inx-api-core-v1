@@ -1,10 +1,10 @@
 package utxo
 
 import (
-	"github.com/iotaledger/hive.go/byteutils"
-	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/serializer"
+	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/inx-api-core-v1/pkg/hornet"
 	"github.com/iotaledger/inx-api-core-v1/pkg/milestone"
 	iotago "github.com/iotaledger/iota.go/v2"

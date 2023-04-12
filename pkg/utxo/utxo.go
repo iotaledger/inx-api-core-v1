@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/inx-api-core-v1/pkg/milestone"
 	iotago "github.com/iotaledger/iota.go/v2"
 )

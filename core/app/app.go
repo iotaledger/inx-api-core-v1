@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/core/shutdown"
-	"github.com/iotaledger/hive.go/core/app/plugins/profiling"
+	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/app/components/profiling"
+	"github.com/iotaledger/hive.go/app/components/shutdown"
 	"github.com/iotaledger/inx-api-core-v1/core/coreapi"
 	"github.com/iotaledger/inx-api-core-v1/core/database"
 	"github.com/iotaledger/inx-api-core-v1/plugins/inx"
@@ -21,16 +21,14 @@ var (
 func App() *app.App {
 	return app.New(Name, Version,
 		app.WithInitComponent(InitComponent),
-		app.WithCoreComponents([]*app.CoreComponent{
-			shutdown.CoreComponent,
-			database.CoreComponent,
-			coreapi.CoreComponent,
-		}...),
-		app.WithPlugins([]*app.Plugin{
-			inx.Plugin,
-			profiling.Plugin,
-			prometheus.Plugin,
-		}...),
+		app.WithComponents(
+			shutdown.Component,
+			database.Component,
+			coreapi.Component,
+			inx.Component,
+			profiling.Component,
+			prometheus.Component,
+		),
 	)
 }
 

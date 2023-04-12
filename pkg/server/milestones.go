@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/inx-api-core-v1/pkg/restapi"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
 )
 
 func (s *DatabaseServer) milestoneByIndex(c echo.Context) (*milestoneResponse, error) {

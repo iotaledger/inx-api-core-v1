@@ -1,10 +1,10 @@
 package utxo
 
 import (
-	"github.com/iotaledger/hive.go/byteutils"
-	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/serializer"
+	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 type OutputConsumer func(output *Output) bool

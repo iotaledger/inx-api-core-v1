@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/inx-api-core-v1/pkg/database"
 	"github.com/iotaledger/inx-api-core-v1/pkg/utxo"
 	iotago "github.com/iotaledger/iota.go/v2"
