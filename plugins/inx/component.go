@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/inx-api-core-v1/pkg/daemon"
+	"github.com/iotaledger/inx-api-core-v1/pkg/server"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 )
 
@@ -81,7 +82,7 @@ func run() error {
 			advertisedAddress = deps.RestAPIAdvertiseAddress
 		}
 
-		if err := deps.NodeBridge.RegisterAPIRoute(ctxRegister, APIRoute, advertisedAddress, APIRoute); err != nil {
+		if err := deps.NodeBridge.RegisterAPIRoute(ctxRegister, APIRoute, advertisedAddress, server.APIRoute); err != nil {
 			Component.LogErrorfAndExit("Registering INX api route failed: %s", err)
 		}
 		cancelRegister()
