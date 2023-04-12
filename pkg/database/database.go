@@ -111,13 +111,6 @@ func New(tangleDatabase, utxoDatabase kvstore.KVStore, networkID uint64, skipHea
 		return nil, err
 	}
 
-	// delete unused prefixes
-	for _, prefix := range []byte{StorePrefixUnreferencedMessages} {
-		if err := tangleDatabase.DeletePrefix(kvstore.KeyPrefix{prefix}); err != nil {
-			return nil, err
-		}
-	}
-
 	return db, nil
 }
 
@@ -126,21 +119,15 @@ func (db *Database) UTXOManager() *utxo.Manager {
 }
 
 func (db *Database) CloseDatabases() error {
-	var flushAndCloseError error
-	if err := db.tangleDatabase.Flush(); err != nil {
-		flushAndCloseError = err
-	}
+	var closeError error
 	if err := db.tangleDatabase.Close(); err != nil {
-		flushAndCloseError = err
-	}
-	if err := db.utxoDatabase.Flush(); err != nil {
-		flushAndCloseError = err
+		closeError = err
 	}
 	if err := db.utxoDatabase.Close(); err != nil {
-		flushAndCloseError = err
+		closeError = err
 	}
 
-	return flushAndCloseError
+	return closeError
 }
 
 type SyncState struct {
