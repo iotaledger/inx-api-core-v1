@@ -3,7 +3,7 @@ package utxo
 import (
 	"encoding/binary"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/inx-api-core-v1/pkg/milestone"
 	iotago "github.com/iotaledger/iota.go/v2"
 )

@@ -6,10 +6,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/dig"
 
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	hivedb "github.com/iotaledger/hive.go/core/database"
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/kvstore"
+	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/inx-api-core-v1/pkg/daemon"
 	"github.com/iotaledger/inx-api-core-v1/pkg/database"
 	"github.com/iotaledger/inx-api-core-v1/pkg/database/engine"
@@ -20,14 +20,13 @@ const (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:     "database",
-			DepsFunc: func(cDeps dependencies) { deps = cDeps },
-			Params:   params,
-			Provide:  provide,
-			Run:      run,
-		},
+	Component = &app.Component{
+		Name:      "database",
+		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
+		Params:    params,
+		Provide:   provide,
+		Run:       run,
+		IsEnabled: func() bool { return true },
 	}
 }
 
@@ -39,8 +38,8 @@ type dependencies struct {
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 func provide(c *dig.Container) error {
@@ -52,7 +51,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func() (storageOut, error) {
-		CoreComponent.LogInfo("Setting up database ...")
+		Component.LogInfo("Setting up database ...")
 
 		tangleDatabase, err := engine.StoreWithDefaultSettings(ParamsDatabase.Tangle.Path, false, hivedb.EngineAuto, engine.AllowedEnginesStorageAuto...)
 		if err != nil {
@@ -97,16 +96,16 @@ func provide(c *dig.Container) error {
 
 func run() error {
 
-	if err := CoreComponent.Daemon().BackgroundWorker("Close database", func(ctx context.Context) {
+	if err := Component.Daemon().BackgroundWorker("Close database", func(ctx context.Context) {
 		<-ctx.Done()
 
-		CoreComponent.LogInfo("Syncing databases to disk ...")
+		Component.LogInfo("Syncing databases to disk ...")
 		if err := deps.Database.CloseDatabases(); err != nil {
-			CoreComponent.LogPanicf("Syncing databases to disk ... failed: %s", err)
+			Component.LogPanicf("Syncing databases to disk ... failed: %s", err)
 		}
-		CoreComponent.LogInfo("Syncing databases to disk ... done")
+		Component.LogInfo("Syncing databases to disk ... done")
 	}, daemon.PriorityStopDatabase); err != nil {
-		CoreComponent.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
 	return nil
