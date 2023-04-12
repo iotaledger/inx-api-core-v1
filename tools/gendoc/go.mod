@@ -1,6 +1,6 @@
 module github.com/iotaledger/inx-api-core-v1/tools/gendoc
 
-go 1.19
+go 1.20
 
 replace github.com/iotaledger/inx-api-core-v1 => ../../
 

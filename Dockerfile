@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/golang
-FROM golang:1.19-bullseye AS build
+FROM golang:1.20-bullseye AS build
 
 ARG BUILD_TAGS=rocksdb
 
@@ -29,7 +29,7 @@ RUN go mod verify
 COPY . .
 
 # Build the binary
-RUN go build -o /app/inx-api-core-v1 -a -tags="$BUILD_TAGS"
+RUN go build -o /app/inx-api-core-v1 -a -tags="$BUILD_TAGS" -ldflags='-w -s'
 
 # Copy the assets
 COPY ./config_defaults.json /app/config.json
