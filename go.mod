@@ -18,7 +18,7 @@ require (
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.14.0
+	github.com/prometheus/client_golang v1.15.0
 	go.uber.org/dig v1.16.1
 )
 
