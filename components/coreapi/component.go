@@ -24,13 +24,12 @@ import (
 
 func init() {
 	Component = &app.Component{
-		Name:           "CoreAPIV1",
-		DepsFunc:       func(cDeps dependencies) { deps = cDeps },
-		Params:         params,
-		InitConfigPars: initConfigPars,
-		Provide:        provide,
-		Run:            run,
-		IsEnabled:      func() bool { return true },
+		Name:             "CoreAPIV1",
+		DepsFunc:         func(cDeps dependencies) { deps = cDeps },
+		Params:           params,
+		InitConfigParams: initConfigParams,
+		Provide:          provide,
+		Run:              run,
 	}
 }
 
@@ -48,7 +47,7 @@ var (
 	deps      dependencies
 )
 
-func initConfigPars(c *dig.Container) error {
+func initConfigParams(c *dig.Container) error {
 
 	type cfgResult struct {
 		dig.Out

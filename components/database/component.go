@@ -21,12 +21,11 @@ const (
 
 func init() {
 	Component = &app.Component{
-		Name:      "database",
-		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-		Params:    params,
-		Provide:   provide,
-		Run:       run,
-		IsEnabled: func() bool { return true },
+		Name:     "database",
+		DepsFunc: func(cDeps dependencies) { deps = cDeps },
+		Params:   params,
+		Provide:  provide,
+		Run:      run,
 	}
 }
 
