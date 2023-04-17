@@ -25,9 +25,9 @@ func init() {
 		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
 		Params:    params,
 		Provide:   provide,
+		IsEnabled: func(_ *dig.Container) bool { return ParamsPrometheus.Enabled },
 		Configure: configure,
 		Run:       run,
-		IsEnabled: func() bool { return ParamsPrometheus.Enabled },
 	}
 }
 

@@ -4,10 +4,10 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/components/profiling"
 	"github.com/iotaledger/hive.go/app/components/shutdown"
-	"github.com/iotaledger/inx-api-core-v1/core/coreapi"
-	"github.com/iotaledger/inx-api-core-v1/core/database"
-	"github.com/iotaledger/inx-api-core-v1/plugins/inx"
-	"github.com/iotaledger/inx-api-core-v1/plugins/prometheus"
+	"github.com/iotaledger/inx-api-core-v1/components/coreapi"
+	"github.com/iotaledger/inx-api-core-v1/components/database"
+	"github.com/iotaledger/inx-api-core-v1/components/inx"
+	"github.com/iotaledger/inx-api-core-v1/components/prometheus"
 )
 
 var (

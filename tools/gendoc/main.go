@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/apputils/config"
-	apiCoreV1App "github.com/iotaledger/inx-api-core-v1/core/app"
+	apiCoreV1App "github.com/iotaledger/inx-api-core-v1/components/app"
 )
 
 func createMarkdownFile(app *app.App, markdownHeaderPath string, markdownFilePath string, ignoreFlags map[string]struct{}, replaceTopicNames map[string]string) {
