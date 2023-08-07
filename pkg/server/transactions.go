@@ -43,7 +43,7 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 
 	maxResults := s.maxResultsFromContext(c)
 
-	var messageIDs map[string]struct{}
+	messageIDs := make(map[string]struct{}, 0)
 	if err := s.UTXOManager.ForEachUnspentOutput(func(output *utxo.Output) bool {
 		messageIDs[output.MessageID().ToMapKey()] = struct{}{}
 		return maxResults-len(messageIDs) > 0
@@ -63,7 +63,9 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 	getTransactionHistoryItem := func(messageID hornet.MessageID) (*transactionHistoryItem, error) {
 		msg := s.Database.MessageOrNil(messageID)
 		if msg == nil {
-			return nil, fmt.Errorf("message not found: %s", messageID.ToHex())
+			// if we don't have the message, we don't have the history, which is fine.
+			//nolint:nilnil
+			return nil, nil
 		}
 
 		msgMeta := s.Database.MessageMetadataOrNil(messageID)
@@ -113,7 +115,9 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 			utxoInputID := utxoInput.ID()
 			output, err := s.UTXOManager.ReadOutputByOutputID(&utxoInputID)
 			if err != nil {
-				return nil, fmt.Errorf("transaction input not found: msgID: %s", messageID.ToHex())
+				// if we don't have the input, we don't have the history, which is fine.
+				//nolint:nilnil,nilerr
+				return nil, nil
 			}
 
 			if output.Address().String() != address.String() {
@@ -167,6 +171,12 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 		if err != nil {
 			return nil, errors.WithMessagef(echo.ErrInternalServerError, "get transaction history failed: %s, error: %s", address, err)
 		}
+
+		if txHistoryItem == nil {
+			// skip if we don't have the history
+			continue
+		}
+
 		txHistoryItems = append(txHistoryItems, txHistoryItem)
 	}
 
