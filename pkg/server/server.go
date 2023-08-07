@@ -6,7 +6,9 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/inx-api-core-v1/pkg/database"
+	restapipkg "github.com/iotaledger/inx-api-core-v1/pkg/restapi"
 	"github.com/iotaledger/inx-api-core-v1/pkg/utxo"
+	"github.com/iotaledger/inx-app/pkg/httpserver"
 	iotago "github.com/iotaledger/iota.go/v2"
 )
 
@@ -56,4 +58,21 @@ func CreateEchoSwagger(e *echo.Echo, version string, enabled bool) echoswagger.A
 	echoSwagger.SetResponseContentType(echo.MIMEApplicationJSON)
 
 	return echoSwagger
+}
+
+func (s *DatabaseServer) maxResultsFromContext(c echo.Context) int {
+	maxPageSize := uint32(s.RestAPILimitsMaxResults)
+	if len(c.QueryParam(restapipkg.QueryParameterPageSize)) > 0 {
+		pageSizeQueryParam, err := httpserver.ParseUint32QueryParam(c, restapipkg.QueryParameterPageSize, maxPageSize)
+		if err != nil {
+			return int(maxPageSize)
+		}
+
+		if pageSizeQueryParam < maxPageSize {
+			// use the smaller page size given by the request context
+			maxPageSize = pageSizeQueryParam
+		}
+	}
+
+	return int(maxPageSize)
 }
