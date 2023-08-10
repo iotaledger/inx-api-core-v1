@@ -30,6 +30,9 @@ const (
 
 	// ParameterMilestoneIndex is used to identify a milestone.
 	ParameterMilestoneIndex = "milestoneIndex"
+
+	// QueryParameterPageSize is used to define the page size for the results.
+	QueryParameterPageSize = "pageSize"
 )
 
 var (

@@ -79,8 +79,8 @@ func (s *DatabaseServer) messageBytesByMessageID(messageID hornet.MessageID) ([]
 	return msg.Data(), nil
 }
 
-func (s *DatabaseServer) childrenIDsByMessageID(messageID hornet.MessageID) (*childrenResponse, error) {
-	maxResults := s.RestAPILimitsMaxResults
+func (s *DatabaseServer) childrenIDsByMessageID(c echo.Context, messageID hornet.MessageID) (*childrenResponse, error) {
+	maxResults := s.maxResultsFromContext(c)
 
 	childrenMessageIDs, err := s.Database.ChildrenMessageIDs(messageID, maxResults)
 	if err != nil {
@@ -96,7 +96,8 @@ func (s *DatabaseServer) childrenIDsByMessageID(messageID hornet.MessageID) (*ch
 }
 
 func (s *DatabaseServer) messageIDsByIndex(c echo.Context) (*messageIDsByIndexResponse, error) {
-	maxResults := s.RestAPILimitsMaxResults
+	maxResults := s.maxResultsFromContext(c)
+
 	index := c.QueryParam("index")
 
 	if index == "" {

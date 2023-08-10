@@ -42,6 +42,28 @@ func (msg *Message) Message() *iotago.Message {
 	return msg.message
 }
 
+func (msg *Message) Transaction() *iotago.Transaction {
+	switch payload := msg.Message().Payload.(type) {
+	case *iotago.Transaction:
+		return payload
+	default:
+		return nil
+	}
+}
+
+func (msg *Message) TransactionEssence() *iotago.TransactionEssence {
+	if transaction := msg.Transaction(); transaction != nil {
+		switch essence := transaction.Essence.(type) {
+		case *iotago.TransactionEssence:
+			return essence
+		default:
+			return nil
+		}
+	}
+
+	return nil
+}
+
 func messageFactory(key []byte, data []byte) *Message {
 	return &Message{
 		messageID: hornet.MessageIDFromSlice(key[:iotago.MessageIDLength]),

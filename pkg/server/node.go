@@ -2,7 +2,6 @@ package server
 
 //nolint:unparam // even if the error is never used, the structure of all routes should be the same
 func (s *DatabaseServer) info() (*infoResponse, error) {
-
 	syncState := s.Database.LatestSyncState()
 
 	return &infoResponse{

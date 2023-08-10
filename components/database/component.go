@@ -77,7 +77,7 @@ func provide(c *dig.Container) error {
 		NetworkID      uint64          `name:"networkId"`
 	}
 
-	if err := c.Provide(func(deps storageDeps) (*database.Database, error) {
+	return c.Provide(func(deps storageDeps) (*database.Database, error) {
 		store, err := database.New(deps.TangleDatabase, deps.UTXODatabase, deps.NetworkID, ParamsDatabase.Debug)
 		if err != nil {
 			return nil, err
@@ -86,11 +86,7 @@ func provide(c *dig.Container) error {
 		store.PrintSnapshotInfo()
 
 		return store, nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func run() error {
