@@ -314,12 +314,7 @@ func (s *DatabaseServer) configureRoutes(routeGroup echoswagger.ApiGroup) {
 			return err
 		}
 
-		resp, err := s.transactionHistoryByAddress(c, address)
-		if err != nil {
-			return err
-		}
-
-		return restapipkg.JSONResponse(c, http.StatusOK, resp)
+		return s.transactionHistoryResponseByAddressAndMimeType(c, address)
 	})
 
 	routeGroup.GET(RouteAddressEd25519History, func(c echo.Context) error {
@@ -328,12 +323,7 @@ func (s *DatabaseServer) configureRoutes(routeGroup echoswagger.ApiGroup) {
 			return err
 		}
 
-		resp, err := s.transactionHistoryByAddress(c, address)
-		if err != nil {
-			return err
-		}
-
-		return restapipkg.JSONResponse(c, http.StatusOK, resp)
+		return s.transactionHistoryResponseByAddressAndMimeType(c, address)
 	})
 
 	routeGroup.GET(RouteTreasury, func(c echo.Context) error {

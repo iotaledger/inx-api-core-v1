@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	APIRoute = "/api/core/v1"
+	APIRoute    = "/api/core/v1"
+	MIMETextCSV = "text/csv"
 )
 
 type DatabaseServer struct {

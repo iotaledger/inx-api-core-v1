@@ -3,6 +3,10 @@ package server
 import (
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"sort"
+	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -12,7 +16,9 @@ import (
 	"github.com/iotaledger/inx-api-core-v1/pkg/hornet"
 	"github.com/iotaledger/inx-api-core-v1/pkg/milestone"
 	"github.com/iotaledger/inx-api-core-v1/pkg/restapi"
+	restapipkg "github.com/iotaledger/inx-api-core-v1/pkg/restapi"
 	"github.com/iotaledger/inx-api-core-v1/pkg/utxo"
+	"github.com/iotaledger/inx-app/pkg/httpserver"
 	iotago "github.com/iotaledger/iota.go/v2"
 )
 
@@ -188,4 +194,65 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 		History:     txHistoryItems,
 		LedgerIndex: ledgerIndex,
 	}, nil
+}
+
+func transactionHistoryCSV(resp *transactionHistoryResponse) string {
+	var csvBuilder strings.Builder
+
+	csvBuilder.WriteString("\"Transaction History\"\n\n")
+
+	csvBuilder.WriteString(fmt.Sprintf("\"Address:\",\"0x%s\"\n", resp.Address))
+	csvBuilder.WriteString(fmt.Sprintf("\"LedgerIndex:\",%d\n", resp.LedgerIndex))
+	csvBuilder.WriteString(fmt.Sprintf("\"MaxResultsLimitReached:\",\"%t\"\n", resp.MaxResults != 0 && resp.Count == resp.MaxResults))
+	csvBuilder.WriteString(fmt.Sprintf("\"Date:\",\"%s\"\n", time.Now().Format(time.RFC3339)))
+	csvBuilder.WriteString("\n\"MessageID\",\"TransactionID\",\"ReferencedByMilestoneIndex\",\"MilestoneTimestampReferenced\",\"LedgerInclusionState\",\"ConflictReason\",\"InputsCount\",\"OutputsCount\",\"AddressBalanceChange\"\n")
+
+	// sort the history items by milestoneIndex and messageID to have a deterministic CSV file
+	sort.Slice(resp.History, func(i, j int) bool {
+		historyItemLeft := resp.History[i]
+		historyItemRight := resp.History[j]
+
+		// if both are referenced by the same milestone, sort by messageID
+		if historyItemLeft.ReferencedByMilestoneIndex == historyItemRight.ReferencedByMilestoneIndex {
+			return strings.Compare(historyItemLeft.MessageID, historyItemRight.MessageID) < 0
+		}
+
+		// sort by milestone index
+		return historyItemLeft.ReferencedByMilestoneIndex < historyItemRight.ReferencedByMilestoneIndex
+	})
+
+	for _, historyItem := range resp.History {
+		csvBuilder.WriteString(fmt.Sprintf("\"%s\",", historyItem.MessageID))
+		csvBuilder.WriteString(fmt.Sprintf("\"%s\",", historyItem.TransactionID))
+		csvBuilder.WriteString(fmt.Sprintf("%d,", historyItem.ReferencedByMilestoneIndex))
+		csvBuilder.WriteString(fmt.Sprintf("\"%s\",", time.Unix(historyItem.MilestoneTimestampReferenced, 0).Format(time.RFC3339)))
+		csvBuilder.WriteString(fmt.Sprintf("\"%s\",", historyItem.LedgerInclusionState))
+		csvBuilder.WriteString(fmt.Sprintf("%d,", historyItem.ConflictReason))
+		csvBuilder.WriteString(fmt.Sprintf("%d,", historyItem.InputsCount))
+		csvBuilder.WriteString(fmt.Sprintf("%d,", historyItem.OutputsCount))
+		csvBuilder.WriteString(fmt.Sprintf("%d\n", historyItem.AddressBalanceChange))
+	}
+
+	return csvBuilder.String()
+}
+
+func (s *DatabaseServer) transactionHistoryResponseByAddressAndMimeType(c echo.Context, address iotago.Address) error {
+	resp, err := s.transactionHistoryByAddress(c, address)
+	if err != nil {
+		return err
+	}
+
+	mimeType, err := httpserver.GetAcceptHeaderContentType(c, MIMETextCSV, echo.MIMEApplicationJSON)
+	if err != nil && !errors.Is(err, httpserver.ErrNotAcceptable) {
+		return err
+	}
+
+	switch mimeType {
+	case MIMETextCSV:
+		return c.Blob(http.StatusOK, MIMETextCSV, []byte(transactionHistoryCSV(resp)))
+
+	default:
+		// default to echo.MIMEApplicationJSON
+		return restapipkg.JSONResponse(c, http.StatusOK, resp)
+	}
 }
