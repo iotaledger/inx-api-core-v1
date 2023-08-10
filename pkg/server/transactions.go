@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/inx-api-core-v1/pkg/hornet"
 	"github.com/iotaledger/inx-api-core-v1/pkg/milestone"
 	"github.com/iotaledger/inx-api-core-v1/pkg/restapi"
-	restapipkg "github.com/iotaledger/inx-api-core-v1/pkg/restapi"
 	"github.com/iotaledger/inx-api-core-v1/pkg/utxo"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	iotago "github.com/iotaledger/iota.go/v2"
@@ -253,6 +252,6 @@ func (s *DatabaseServer) transactionHistoryResponseByAddressAndMimeType(c echo.C
 
 	default:
 		// default to echo.MIMEApplicationJSON
-		return restapipkg.JSONResponse(c, http.StatusOK, resp)
+		return restapi.JSONResponse(c, http.StatusOK, resp)
 	}
 }

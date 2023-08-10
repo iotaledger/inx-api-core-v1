@@ -60,6 +60,7 @@ func (msg *Message) TransactionEssence() *iotago.TransactionEssence {
 			return nil
 		}
 	}
+
 	return nil
 }
 
