@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
+	github.com/hashicorp/golang-lru/v2 v2.0.6
 	github.com/iotaledger/hive.go/app v0.0.0-20230417125513-e2e89991217f
 	github.com/iotaledger/hive.go/ds v0.0.0-20230417125513-e2e89991217f
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20230417125513-e2e89991217f

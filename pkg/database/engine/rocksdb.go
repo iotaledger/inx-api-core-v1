@@ -9,7 +9,10 @@ import (
 // NewRocksDB creates a new RocksDB instance.
 func NewRocksDB(path string, readonly bool) (*rocksdb.RocksDB, error) {
 	if readonly {
-		return rocksdb.OpenDBReadOnly(path)
+		return rocksdb.OpenDBReadOnly(path,
+			rocksdb.Custom([]string{
+				"max_open_files=-1", // set max_open_files to -1 to always keep all files open, which avoids expensive table cache calls.
+			}))
 	}
 
 	opts := []rocksdb.Option{

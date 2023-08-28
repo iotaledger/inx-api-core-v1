@@ -126,6 +126,7 @@ func run() error {
 			deps.NetworkIDName,
 			deps.Bech32HRP,
 			ParamsRestAPI.Limits.MaxResults,
+			ParamsRestAPI.Caches.TransactionHistorySize,
 		)
 
 		deps.Echo.Server.BaseContext = func(l net.Listener) context.Context {

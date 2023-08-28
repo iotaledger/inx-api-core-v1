@@ -169,15 +169,22 @@ Example:
 | bindAddress               | The bind address on which the chrysalis API HTTP server listens                               | string  | "localhost:9094" |
 | advertiseAddress          | The address of the chrysalis API HTTP server which is advertised to the INX Server (optional) | string  | ""               |
 | [limits](#restapi_limits) | Configuration for limits                                                                      | object  |                  |
+| [caches](#restapi_caches) | Configuration for caches                                                                      | object  |                  |
 | swaggerEnabled            | Whether to provide swagger API documentation under endpoint "/swagger"                        | boolean | false            |
 | debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled                                      | boolean | false            |
 
 ### <a id="restapi_limits"></a> Limits
 
-| Name          | Description                                                               | Type   | Default value |
-| ------------- | ------------------------------------------------------------------------- | ------ | ------------- |
-| maxBodyLength | The maximum number of characters that the body of an API call may contain | string | "1M"          |
-| maxResults    | The maximum number of results that may be returned by an endpoint         | int    | 1000          |
+| Name          | Description                                                                        | Type   | Default value |
+| ------------- | ---------------------------------------------------------------------------------- | ------ | ------------- |
+| maxBodyLength | The maximum number of characters that the body of an API call may contain          | string | "1M"          |
+| maxResults    | The maximum number of results that may be returned by an endpoint (0 for disabled) | int    | 1000          |
+
+### <a id="restapi_caches"></a> Caches
+
+| Name                   | Description                                                        | Type | Default value |
+| ---------------------- | ------------------------------------------------------------------ | ---- | ------------- |
+| transactionHistorySize | The maximum number of entries in the transaction history LRU cache | int  | 10000         |
 
 Example:
 
@@ -189,6 +196,9 @@ Example:
       "limits": {
         "maxBodyLength": "1M",
         "maxResults": 1000
+      },
+      "caches": {
+        "transactionHistorySize": 10000
       },
       "swaggerEnabled": false,
       "debugRequestLoggerEnabled": false
