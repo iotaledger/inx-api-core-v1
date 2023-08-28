@@ -100,6 +100,18 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 		}
 	}
 
+	if maxResults-len(messageIDs) > 0 {
+		// add the messages that contain conflicting transactions for the given address
+		conflictingTransactionsMessageIDs, err := s.Database.ConflictingTransactionsMessageIDs(address, maxResults-len(messageIDs))
+		if err != nil {
+			return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading conflicting transaction messageIDs failed: %s, error: %s", address, err)
+		}
+
+		for _, conflictingTransactionsMessageID := range conflictingTransactionsMessageIDs {
+			messageIDs[conflictingTransactionsMessageID.ToMapKey()] = struct{}{}
+		}
+	}
+
 	getTransactionHistoryItem := func(messageID hornet.MessageID) (*transactionHistoryItem, error) {
 		msg := s.Database.MessageOrNil(messageID)
 		if msg == nil {

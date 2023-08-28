@@ -174,7 +174,7 @@ func metadataFactory(key []byte, data []byte) (*MessageMetadata, error) {
 	}
 
 	m := &MessageMetadata{
-		messageID: hornet.MessageIDFromSlice(key[:32]),
+		messageID: hornet.MessageIDFromSlice(key[:iotago.MessageIDLength]),
 	}
 
 	m.metadata = bitmask.BitMask(metadataByte)

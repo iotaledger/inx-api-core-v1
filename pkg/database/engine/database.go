@@ -23,7 +23,7 @@ var (
 
 // StoreWithDefaultSettings returns a kvstore with default settings.
 // It also checks if the database engine is correct.
-func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine, allowedEngines ...hivedb.Engine) (kvstore.KVStore, error) {
+func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine, readonly bool, allowedEngines ...hivedb.Engine) (kvstore.KVStore, error) {
 
 	tmpAllowedEngines := AllowedEnginesDefault
 	if len(allowedEngines) > 0 {
@@ -38,7 +38,7 @@ func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEng
 	//nolint:exhaustive
 	switch targetEngine {
 	case hivedb.EngineRocksDB:
-		db, err := NewRocksDB(path)
+		db, err := NewRocksDB(path, readonly)
 		if err != nil {
 			return nil, err
 		}

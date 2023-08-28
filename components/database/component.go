@@ -8,11 +8,8 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
-	"github.com/iotaledger/hive.go/kvstore"
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/inx-api-core-v1/pkg/daemon"
 	"github.com/iotaledger/inx-api-core-v1/pkg/database"
-	"github.com/iotaledger/inx-api-core-v1/pkg/database/engine"
 )
 
 const (
@@ -43,42 +40,15 @@ var (
 
 func provide(c *dig.Container) error {
 
-	type storageOut struct {
-		dig.Out
-		TangleDatabase kvstore.KVStore `name:"tangleDatabase"`
-		UTXODatabase   kvstore.KVStore `name:"utxoDatabase"`
-	}
-
-	if err := c.Provide(func() (storageOut, error) {
-		Component.LogInfo("Setting up database ...")
-
-		tangleDatabase, err := engine.StoreWithDefaultSettings(ParamsDatabase.Tangle.Path, false, hivedb.EngineAuto, engine.AllowedEnginesStorageAuto...)
-		if err != nil {
-			return storageOut{}, err
-		}
-
-		utxoDatabase, err := engine.StoreWithDefaultSettings(ParamsDatabase.UTXO.Path, false, hivedb.EngineAuto, engine.AllowedEnginesStorageAuto...)
-		if err != nil {
-			return storageOut{}, err
-		}
-
-		return storageOut{
-			TangleDatabase: tangleDatabase,
-			UTXODatabase:   utxoDatabase,
-		}, err
-	}); err != nil {
-		return err
-	}
-
 	type storageDeps struct {
 		dig.In
-		TangleDatabase kvstore.KVStore `name:"tangleDatabase"`
-		UTXODatabase   kvstore.KVStore `name:"utxoDatabase"`
-		NetworkID      uint64          `name:"networkId"`
+		NetworkID uint64 `name:"networkId"`
 	}
 
 	return c.Provide(func(deps storageDeps) (*database.Database, error) {
-		store, err := database.New(deps.TangleDatabase, deps.UTXODatabase, deps.NetworkID, ParamsDatabase.Debug)
+		Component.LogInfo("Setting up database ...")
+
+		store, err := database.New(Component.Logger(), ParamsDatabase.Tangle.Path, ParamsDatabase.UTXO.Path, deps.NetworkID, ParamsDatabase.Debug)
 		if err != nil {
 			return nil, err
 		}
