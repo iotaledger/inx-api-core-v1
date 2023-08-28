@@ -50,6 +50,7 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 
 	messageIDs := make(map[string]struct{}, 0)
 	if err := s.UTXOManager.ForEachUnspentOutput(func(output *utxo.Output) bool {
+		// add the message that contains the transaction which created this output
 		messageIDs[output.MessageID().ToMapKey()] = struct{}{}
 		return maxResults-len(messageIDs) > 0
 	}, utxo.FilterAddress(address)); err != nil {
@@ -57,11 +58,45 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 	}
 
 	if maxResults-len(messageIDs) > 0 {
+		// helper function to get the message ID of the transaction that spent the output
+		getSpendingMessageID := func(transactionID *iotago.TransactionID) (hornet.MessageID, error) {
+			// get the first output of that transaction (using index 0)
+			outputID := &iotago.UTXOInputID{}
+			copy(outputID[:], transactionID[:])
+
+			output, err := s.UTXOManager.ReadOutputByOutputID(outputID)
+			if err != nil {
+				if errors.Is(err, kvstore.ErrKeyNotFound) {
+					// if we don't have the output, we don't have the history, which is fine.
+					//nolint:nilnil
+					return nil, nil
+				}
+
+				return nil, errors.WithMessagef(echo.ErrInternalServerError, "failed to load output for transaction: %s", hex.EncodeToString(transactionID[:]))
+			}
+
+			return output.MessageID(), nil
+		}
+
+		var innerErr error
 		if err := s.UTXOManager.ForEachSpentOutput(func(spent *utxo.Spent) bool {
+			// add the message that contains the transaction which created this output
 			messageIDs[spent.MessageID().ToMapKey()] = struct{}{}
+
+			// also add the message that contains the transaction that spent this output
+			spendingMessageID, err := getSpendingMessageID(spent.TargetTransactionID())
+			if err != nil {
+				innerErr = err
+				return false
+			}
+			messageIDs[spendingMessageID.ToMapKey()] = struct{}{}
+
 			return maxResults-len(messageIDs) > 0
 		}, utxo.FilterAddress(address)); err != nil {
 			return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading spent outputs failed: %s, error: %s", address, err)
+		}
+		if innerErr != nil {
+			return nil, innerErr
 		}
 	}
 
