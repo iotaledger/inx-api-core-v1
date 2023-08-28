@@ -40,9 +40,6 @@ type Database struct {
 	childrenStore   kvstore.KVStore
 	indexationStore kvstore.KVStore
 
-	// solid entry points
-	solidEntryPoints *SolidEntryPoints
-
 	// snapshot info
 	snapshot *SnapshotInfo
 
@@ -83,19 +80,18 @@ func New(tangleDatabase, utxoDatabase kvstore.KVStore, networkID uint64, skipHea
 	}
 
 	db := &Database{
-		tangleDatabase:   tangleDatabase,
-		utxoDatabase:     utxoDatabase,
-		messagesStore:    lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMessages})),
-		metadataStore:    lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMessageMetadata})),
-		milestonesStore:  lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMilestones})),
-		snapshotStore:    lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixSnapshot})),
-		childrenStore:    lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixChildren})),
-		indexationStore:  lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixIndexation})),
-		solidEntryPoints: nil,
-		snapshot:         nil,
-		utxoManager:      utxo.New(utxoDatabase),
-		syncState:        nil,
-		syncStateOnce:    sync.Once{},
+		tangleDatabase:  tangleDatabase,
+		utxoDatabase:    utxoDatabase,
+		messagesStore:   lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMessages})),
+		metadataStore:   lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMessageMetadata})),
+		milestonesStore: lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMilestones})),
+		snapshotStore:   lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixSnapshot})),
+		childrenStore:   lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixChildren})),
+		indexationStore: lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixIndexation})),
+		snapshot:        nil,
+		utxoManager:     utxo.New(utxoDatabase),
+		syncState:       nil,
+		syncStateOnce:   sync.Once{},
 	}
 
 	if err := db.loadSnapshotInfo(); err != nil {
@@ -105,10 +101,6 @@ func New(tangleDatabase, utxoDatabase kvstore.KVStore, networkID uint64, skipHea
 	// check that the database matches to the config network ID
 	if networkID != db.snapshot.NetworkID {
 		return nil, fmt.Errorf("app is configured to operate in network with ID %d but the database corresponds to ID %d", networkID, db.snapshot.NetworkID)
-	}
-
-	if err := db.loadSolidEntryPoints(); err != nil {
-		return nil, err
 	}
 
 	return db, nil
