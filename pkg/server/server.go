@@ -1,10 +1,14 @@
 package server
 
 import (
+	"math"
+
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/inx-api-core-v1/pkg/database"
 	restapipkg "github.com/iotaledger/inx-api-core-v1/pkg/restapi"
 	"github.com/iotaledger/inx-api-core-v1/pkg/utxo"
@@ -24,9 +28,11 @@ type DatabaseServer struct {
 	NetworkIDName           string
 	Bech32HRP               iotago.NetworkPrefix
 	RestAPILimitsMaxResults int
+
+	txHistoryCache *lru.TwoQueueCache[string, []*transactionHistoryItem]
 }
 
-func NewDatabaseServer(swagger echoswagger.ApiRoot, appInfo *app.Info, db *database.Database, utxoManager *utxo.Manager, networkIDName string, bech32HRP iotago.NetworkPrefix, maxResults int) *DatabaseServer {
+func NewDatabaseServer(swagger echoswagger.ApiRoot, appInfo *app.Info, db *database.Database, utxoManager *utxo.Manager, networkIDName string, bech32HRP iotago.NetworkPrefix, maxResults int, txHistoryCacheSize int) *DatabaseServer {
 	s := &DatabaseServer{
 		AppInfo:                 appInfo,
 		Database:                db,
@@ -34,6 +40,7 @@ func NewDatabaseServer(swagger echoswagger.ApiRoot, appInfo *app.Info, db *datab
 		NetworkIDName:           networkIDName,
 		Bech32HRP:               bech32HRP,
 		RestAPILimitsMaxResults: maxResults,
+		txHistoryCache:          lo.PanicOnErr(lru.New2Q[string, []*transactionHistoryItem](txHistoryCacheSize)),
 	}
 
 	s.configureRoutes(swagger.Group("root", APIRoute))
@@ -63,6 +70,10 @@ func CreateEchoSwagger(e *echo.Echo, version string, enabled bool) echoswagger.A
 
 func (s *DatabaseServer) maxResultsFromContext(c echo.Context) int {
 	maxPageSize := uint32(s.RestAPILimitsMaxResults)
+	if maxPageSize <= 0 {
+		maxPageSize = math.MaxUint32
+	}
+
 	if len(c.QueryParam(restapipkg.QueryParameterPageSize)) > 0 {
 		pageSizeQueryParam, err := httpserver.ParseUint32QueryParam(c, restapipkg.QueryParameterPageSize, maxPageSize)
 		if err != nil {

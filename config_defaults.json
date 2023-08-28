@@ -43,6 +43,9 @@
       "maxBodyLength": "1M",
       "maxResults": 1000
     },
+    "caches": {
+      "transactionHistorySize": 10000
+    },
     "swaggerEnabled": false,
     "debugRequestLoggerEnabled": false
   },

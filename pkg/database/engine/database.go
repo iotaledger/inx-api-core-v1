@@ -5,19 +5,16 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/hive.go/kvstore/pebble"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 )
 
 var (
 	AllowedEnginesDefault = []hivedb.Engine{
 		hivedb.EngineAuto,
-		hivedb.EnginePebble,
 		hivedb.EngineRocksDB,
 	}
 
 	AllowedEnginesStorage = []hivedb.Engine{
-		hivedb.EnginePebble,
 		hivedb.EngineRocksDB,
 	}
 
@@ -26,7 +23,7 @@ var (
 
 // StoreWithDefaultSettings returns a kvstore with default settings.
 // It also checks if the database engine is correct.
-func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine, allowedEngines ...hivedb.Engine) (kvstore.KVStore, error) {
+func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine, readonly bool, allowedEngines ...hivedb.Engine) (kvstore.KVStore, error) {
 
 	tmpAllowedEngines := AllowedEnginesDefault
 	if len(allowedEngines) > 0 {
@@ -40,16 +37,8 @@ func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEng
 
 	//nolint:exhaustive
 	switch targetEngine {
-	case hivedb.EnginePebble:
-		db, err := NewPebbleDB(path, nil, false)
-		if err != nil {
-			return nil, err
-		}
-
-		return pebble.New(db), nil
-
 	case hivedb.EngineRocksDB:
-		db, err := NewRocksDB(path)
+		db, err := NewRocksDB(path, readonly)
 		if err != nil {
 			return nil, err
 		}
@@ -57,6 +46,6 @@ func StoreWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEng
 		return rocksdb.New(db), nil
 
 	default:
-		return nil, fmt.Errorf("unknown database engine: %s, supported engines: pebble/rocksdb", dbEngine)
+		return nil, fmt.Errorf("unknown database engine: %s, supported engines: rocksdb", dbEngine)
 	}
 }

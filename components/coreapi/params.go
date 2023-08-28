@@ -16,7 +16,12 @@ type ParametersRestAPI struct {
 		// the maximum number of characters that the body of an API call may contain
 		MaxBodyLength string `default:"1M" usage:"the maximum number of characters that the body of an API call may contain"`
 		// the maximum number of results that may be returned by an endpoint
-		MaxResults int `default:"1000" usage:"the maximum number of results that may be returned by an endpoint"`
+		MaxResults int `default:"1000" usage:"the maximum number of results that may be returned by an endpoint (0 for disabled)"`
+	}
+
+	Caches struct {
+		// the maximum number of entries in the transaction history LRU cache
+		TransactionHistorySize int `default:"10000" usage:"the maximum number of entries in the transaction history LRU cache"`
 	}
 
 	// SwaggerEnabled defines whether to provide swagger API documentation under endpoint "/swagger"
