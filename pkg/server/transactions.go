@@ -52,64 +52,63 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 	if err := s.UTXOManager.ForEachUnspentOutput(func(output *utxo.Output) bool {
 		// add the message that contains the transaction which created this output
 		messageIDs[output.MessageID().ToMapKey()] = struct{}{}
-		return maxResults-len(messageIDs) > 0
+
+		// we always collect all results and cap to the maximum later to have deterministic responses
+		return true
 	}, utxo.FilterAddress(address)); err != nil {
 		return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading unspent outputs failed: %s, error: %s", address, err)
 	}
 
-	if maxResults-len(messageIDs) > 0 {
-		// helper function to get the message ID of the transaction that spent the output
-		getSpendingMessageID := func(transactionID *iotago.TransactionID) (hornet.MessageID, error) {
-			// get the first output of that transaction (using index 0)
-			outputID := &iotago.UTXOInputID{}
-			copy(outputID[:], transactionID[:])
+	// helper function to get the message ID of the transaction that spent the output
+	getSpendingMessageID := func(transactionID *iotago.TransactionID) (hornet.MessageID, error) {
+		// get the first output of that transaction (using index 0)
+		outputID := &iotago.UTXOInputID{}
+		copy(outputID[:], transactionID[:])
 
-			output, err := s.UTXOManager.ReadOutputByOutputID(outputID)
-			if err != nil {
-				if errors.Is(err, kvstore.ErrKeyNotFound) {
-					// if we don't have the output, we don't have the history, which is fine.
-					//nolint:nilnil
-					return nil, nil
-				}
-
-				return nil, errors.WithMessagef(echo.ErrInternalServerError, "failed to load output for transaction: %s", hex.EncodeToString(transactionID[:]))
+		output, err := s.UTXOManager.ReadOutputByOutputID(outputID)
+		if err != nil {
+			if errors.Is(err, kvstore.ErrKeyNotFound) {
+				// if we don't have the output, we don't have the history, which is fine.
+				//nolint:nilnil
+				return nil, nil
 			}
 
-			return output.MessageID(), nil
+			return nil, errors.WithMessagef(echo.ErrInternalServerError, "failed to load output for transaction: %s", hex.EncodeToString(transactionID[:]))
 		}
 
-		var innerErr error
-		if err := s.UTXOManager.ForEachSpentOutput(func(spent *utxo.Spent) bool {
-			// add the message that contains the transaction which created this output
-			messageIDs[spent.MessageID().ToMapKey()] = struct{}{}
-
-			// also add the message that contains the transaction that spent this output
-			spendingMessageID, err := getSpendingMessageID(spent.TargetTransactionID())
-			if err != nil {
-				innerErr = errors.WithMessagef(echo.ErrInternalServerError, "reading spent outputs failed: %s, error: %s", address, err)
-				return false
-			}
-			messageIDs[spendingMessageID.ToMapKey()] = struct{}{}
-
-			return maxResults-len(messageIDs) > 0
-		}, utxo.FilterAddress(address)); err != nil {
-			return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading spent outputs failed: %s, error: %s", address, err)
-		}
-		if innerErr != nil {
-			return nil, innerErr
-		}
+		return output.MessageID(), nil
 	}
 
-	if maxResults-len(messageIDs) > 0 {
-		// add the messages that contain conflicting transactions for the given address
-		conflictingTransactionsMessageIDs, err := s.Database.ConflictingTransactionsMessageIDs(address, maxResults-len(messageIDs))
-		if err != nil {
-			return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading conflicting transaction messageIDs failed: %s, error: %s", address, err)
-		}
+	var innerErr error
+	if err := s.UTXOManager.ForEachSpentOutput(func(spent *utxo.Spent) bool {
+		// add the message that contains the transaction which created this output
+		messageIDs[spent.MessageID().ToMapKey()] = struct{}{}
 
-		for _, conflictingTransactionsMessageID := range conflictingTransactionsMessageIDs {
-			messageIDs[conflictingTransactionsMessageID.ToMapKey()] = struct{}{}
+		// also add the message that contains the transaction that spent this output
+		spendingMessageID, err := getSpendingMessageID(spent.TargetTransactionID())
+		if err != nil {
+			innerErr = errors.WithMessagef(echo.ErrInternalServerError, "reading spent outputs failed: %s, error: %s", address, err)
+			return false
 		}
+		messageIDs[spendingMessageID.ToMapKey()] = struct{}{}
+
+		// we always collect all results and cap to the maximum later to have deterministic responses
+		return true
+	}, utxo.FilterAddress(address)); err != nil {
+		return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading spent outputs failed: %s, error: %s", address, err)
+	}
+	if innerErr != nil {
+		return nil, innerErr
+	}
+
+	// add the messages that contain conflicting transactions for the given address
+	conflictingTransactionsMessageIDs, err := s.Database.ConflictingTransactionsMessageIDs(address)
+	if err != nil {
+		return nil, errors.WithMessagef(echo.ErrInternalServerError, "reading conflicting transaction messageIDs failed: %s, error: %s", address, err)
+	}
+
+	for _, conflictingTransactionsMessageID := range conflictingTransactionsMessageIDs {
+		messageIDs[conflictingTransactionsMessageID.ToMapKey()] = struct{}{}
 	}
 
 	getTransactionHistoryItem := func(messageID hornet.MessageID) (*transactionHistoryItem, error) {
@@ -230,6 +229,24 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 		}
 
 		txHistoryItems = append(txHistoryItems, txHistoryItem)
+	}
+
+	// sort the results by highest milestone index and lowest messageID
+	sort.Slice(txHistoryItems, func(i, j int) bool {
+		historyItemLeft := txHistoryItems[i]
+		historyItemRight := txHistoryItems[j]
+
+		// if both are referenced by the same milestone, sort by messageID
+		if historyItemLeft.ReferencedByMilestoneIndex == historyItemRight.ReferencedByMilestoneIndex {
+			return strings.Compare(historyItemLeft.MessageID, historyItemRight.MessageID) < 0
+		}
+
+		// sort by milestone index
+		return historyItemLeft.ReferencedByMilestoneIndex > historyItemRight.ReferencedByMilestoneIndex
+	})
+
+	if len(txHistoryItems) > maxResults {
+		txHistoryItems = txHistoryItems[:maxResults]
 	}
 
 	return &transactionHistoryResponse{

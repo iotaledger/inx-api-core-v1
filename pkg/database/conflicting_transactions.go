@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	// printStatusInterval is the interval for printing status messages
+	// printStatusInterval is the interval for printing status messages.
 	printStatusInterval = 2 * time.Second
 )
 
@@ -173,7 +173,7 @@ func (db *Database) createConflictingTransactionsMessageIDsLookupTable(ctx conte
 }
 
 // ConflictingTransactionsMessageIDs returns the message IDs of conflicting transactions of the given address.
-func (db *Database) ConflictingTransactionsMessageIDs(address iotago.Address, maxResults int) (hornet.MessageIDs, error) {
+func (db *Database) ConflictingTransactionsMessageIDs(address iotago.Address, maxResults ...int) (hornet.MessageIDs, error) {
 	var conflictingTransactionsMessageIDs hornet.MessageIDs
 
 	addrBytes, err := address.Serialize(serializer.DeSeriModeNoValidation)
@@ -187,8 +187,12 @@ func (db *Database) ConflictingTransactionsMessageIDs(address iotago.Address, ma
 
 		conflictingTransactionsMessageIDs = append(conflictingTransactionsMessageIDs, hornet.MessageIDFromSlice(key[len(addrBytes):len(addrBytes)+iotago.MessageIDLength]))
 
-		// stop if maximum amount of iterations reached
-		return iterations <= maxResults
+		if len(maxResults) > 0 {
+			// stop if maximum amount of iterations reached
+			return iterations <= maxResults[0]
+		}
+
+		return true
 	}); err != nil {
 		return nil, err
 	}
