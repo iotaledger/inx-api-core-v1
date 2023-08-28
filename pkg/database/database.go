@@ -1,8 +1,10 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -34,6 +36,8 @@ const (
 )
 
 type Database struct {
+	*logger.WrappedLogger
+
 	// databases
 	tangleDatabase kvstore.KVStore
 	utxoDatabase   kvstore.KVStore
@@ -58,7 +62,7 @@ type Database struct {
 	syncStateOnce sync.Once
 }
 
-func New(log *logger.Logger, tangleDatabasePath string, utxoDatabasePath string, networkID uint64, skipHealthCheck bool) (*Database, error) {
+func New(ctx context.Context, log *logger.Logger, tangleDatabasePath string, utxoDatabasePath string, networkID uint64, skipHealthCheck bool) (*Database, error) {
 
 	checkDatabaseHealth := func(store kvstore.KVStore) error {
 		healthTracker, err := kvstore.NewStoreHealthTracker(store, kvstore.KeyPrefix{StorePrefixHealth}, DBVersion, nil)
@@ -98,6 +102,7 @@ func New(log *logger.Logger, tangleDatabasePath string, utxoDatabasePath string,
 		}
 
 		db := &Database{
+			WrappedLogger:                logger.NewWrappedLogger(log),
 			tangleDatabase:               tangleDatabase,
 			utxoDatabase:                 utxoDatabase,
 			messagesStore:                lo.PanicOnErr(tangleDatabase.WithRealm([]byte{StorePrefixMessages})),
@@ -141,7 +146,7 @@ func New(log *logger.Logger, tangleDatabasePath string, utxoDatabasePath string,
 	// in case not, we rebuild the lookup table
 	// therefore we need to reopen the database in write mode
 	if !conflictingTransactionsLookupTableUpToDate {
-		log.Infof("Conflicting transactions store not up to date. Updating now... (this may take some time!)")
+		db.LogInfof("Conflicting transactions store not up to date. Updating now... (this may take some time!)")
 
 		// first we close the readonly databases
 		if err := db.CloseDatabases(); err != nil {
@@ -154,7 +159,8 @@ func New(log *logger.Logger, tangleDatabasePath string, utxoDatabasePath string,
 			return nil, err
 		}
 
-		if err := db.createConflictingTransactionsMessageIDsLookupTable(); err != nil {
+		ts := time.Now()
+		if err := db.createConflictingTransactionsMessageIDsLookupTable(ctx); err != nil {
 			_ = db.CloseDatabases()
 			return nil, fmt.Errorf("failed to create conflicting transactions lookup table: error: %w", err)
 		}
@@ -164,7 +170,7 @@ func New(log *logger.Logger, tangleDatabasePath string, utxoDatabasePath string,
 			return nil, fmt.Errorf("failed to close readonly databases: error: %w", err)
 		}
 
-		log.Infof("Updating conflicting transactions store done!")
+		db.LogInfof("Updating conflicting transactions store done! Took: %v", time.Since(ts).Truncate(time.Millisecond))
 
 		// initialize again in readonly mode
 		db, err = initDatabase(true)

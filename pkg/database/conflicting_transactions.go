@@ -1,16 +1,29 @@
 package database
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/runtime/contextutils"
 	"github.com/iotaledger/hive.go/serializer"
 	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
 	"github.com/iotaledger/inx-api-core-v1/pkg/hornet"
 	"github.com/iotaledger/inx-api-core-v1/pkg/milestone"
 	iotago "github.com/iotaledger/iota.go/v2"
+)
+
+const (
+	// printStatusInterval is the interval for printing status messages
+	printStatusInterval = 2 * time.Second
+)
+
+var (
+	// ErrOperationAborted is returned when the operation was aborted e.g. by a shutdown signal.
+	ErrOperationAborted = errors.New("operation was aborted")
 )
 
 func (db *Database) checkConflictingTransactionsMessageIDsStatus() (bool, error) {
@@ -29,7 +42,7 @@ func (db *Database) checkConflictingTransactionsMessageIDsStatus() (bool, error)
 	return conflictingTransactionsStoreIndex == ledgerIndex, nil
 }
 
-func (db *Database) createConflictingTransactionsMessageIDsLookupTable() error {
+func (db *Database) createConflictingTransactionsMessageIDsLookupTable(ctx context.Context) error {
 	// first we need to delete the old table before we rebuild the lookup table
 	if err := db.conflictingTransactionsStore.DeletePrefix([]byte{}); err != nil {
 		return fmt.Errorf("deleting conflicting transactions store failed: %w", err)
@@ -51,7 +64,22 @@ func (db *Database) createConflictingTransactionsMessageIDsLookupTable() error {
 
 	// we loop over all existing messages and filter messages that contain conflicting transactions to create the lookup table
 	var innerErr error
+
+	lastStatusTime := time.Now()
+	var metadataCounter int64
 	if err := db.metadataStore.Iterate(kvstore.EmptyPrefix, func(key []byte, data []byte) bool {
+		metadataCounter++
+
+		if time.Since(lastStatusTime) >= printStatusInterval {
+			lastStatusTime = time.Now()
+
+			if err := contextutils.ReturnErrIfCtxDone(ctx, ErrOperationAborted); err != nil {
+				return false
+			}
+
+			db.LogInfof("analyzed %d messages", metadataCounter)
+		}
+
 		messageID := hornet.MessageIDFromSlice(key[:iotago.MessageIDLength])
 
 		msgMeta, err := metadataFactory(messageID, data)

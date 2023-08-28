@@ -10,6 +10,7 @@ require (
 	github.com/iotaledger/hive.go/lo v0.0.0-20230417125513-e2e89991217f
 	github.com/iotaledger/hive.go/logger v0.0.0-20230417125513-e2e89991217f
 	github.com/iotaledger/hive.go/objectstorage v0.0.0-20230417125513-e2e89991217f
+	github.com/iotaledger/hive.go/runtime v0.0.0-20230417125513-e2e89991217f
 	github.com/iotaledger/hive.go/serializer v0.0.0-20230412174115-25ef4785e726
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230417125513-e2e89991217f
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417173151-cde47df5fe79
@@ -50,7 +51,6 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
 	github.com/iotaledger/hive.go/constraints v0.0.0-20230417125513-e2e89991217f // indirect
-	github.com/iotaledger/hive.go/runtime v0.0.0-20230417125513-e2e89991217f // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20230417125513-e2e89991217f // indirect
 	github.com/iotaledger/inx/go v1.0.0-rc.2 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect

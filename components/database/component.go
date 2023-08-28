@@ -48,7 +48,7 @@ func provide(c *dig.Container) error {
 	return c.Provide(func(deps storageDeps) (*database.Database, error) {
 		Component.LogInfo("Setting up database ...")
 
-		store, err := database.New(Component.Logger(), ParamsDatabase.Tangle.Path, ParamsDatabase.UTXO.Path, deps.NetworkID, ParamsDatabase.Debug)
+		store, err := database.New(Component.Daemon().ContextStopped(), Component.Logger(), ParamsDatabase.Tangle.Path, ParamsDatabase.UTXO.Path, deps.NetworkID, ParamsDatabase.Debug)
 		if err != nil {
 			return nil, err
 		}

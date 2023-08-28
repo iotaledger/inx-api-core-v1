@@ -86,7 +86,7 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 			// also add the message that contains the transaction that spent this output
 			spendingMessageID, err := getSpendingMessageID(spent.TargetTransactionID())
 			if err != nil {
-				innerErr = err
+				innerErr = errors.WithMessagef(echo.ErrInternalServerError, "reading spent outputs failed: %s, error: %s", address, err)
 				return false
 			}
 			messageIDs[spendingMessageID.ToMapKey()] = struct{}{}
