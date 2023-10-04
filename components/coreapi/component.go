@@ -81,7 +81,9 @@ func provide(c *dig.Container) error {
 			nil,
 			ParamsRestAPI.DebugRequestLoggerEnabled,
 		)
-		e.Use(middleware.Gzip())
+		if ParamsRestAPI.UseGZIP {
+			e.Use(middleware.Gzip())
+		}
 		e.Use(middleware.BodyLimit(ParamsRestAPI.Limits.MaxBodyLength))
 
 		// "api/v1" had a custom error handler

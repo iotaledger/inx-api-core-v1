@@ -171,6 +171,7 @@ Example:
 | [limits](#restapi_limits) | Configuration for limits                                                                      | object  |                  |
 | [caches](#restapi_caches) | Configuration for caches                                                                      | object  |                  |
 | swaggerEnabled            | Whether to provide swagger API documentation under endpoint "/swagger"                        | boolean | false            |
+| useGZIP                   | Use the gzip middleware to compress HTTP responses                                            | boolean | true             |
 | debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled                                      | boolean | false            |
 
 ### <a id="restapi_limits"></a> Limits
@@ -201,6 +202,7 @@ Example:
         "transactionHistorySize": 10000
       },
       "swaggerEnabled": false,
+      "useGZIP": true,
       "debugRequestLoggerEnabled": false
     }
   }

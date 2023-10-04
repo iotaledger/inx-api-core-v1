@@ -47,6 +47,7 @@
       "transactionHistorySize": 10000
     },
     "swaggerEnabled": false,
+    "useGZIP": true,
     "debugRequestLoggerEnabled": false
   },
   "inx": {
