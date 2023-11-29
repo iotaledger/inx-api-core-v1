@@ -15,7 +15,7 @@ var (
 	Name = "inx-api-core-v1"
 
 	// Version of the app.
-	Version = "1.0.1"
+	Version = "1.0.2"
 )
 
 func App() *app.App {
