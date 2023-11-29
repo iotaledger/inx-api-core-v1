@@ -103,6 +103,7 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 		if txPayload == nil {
 			// not a transaction payload. check if it is a milestone payload
 			msPayload := msg.Milestone()
+			//nolint:forcetypeassert
 			if msPayload == nil || msPayload.Receipt == nil || msPayload.Receipt.(*iotago.Receipt).Transaction == nil {
 				return nil, fmt.Errorf("message does not contain a transaction or milestone payload: %s", messageID.ToHex())
 			}
@@ -110,12 +111,16 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 			// we need to signal that this was a migration from the legacy network
 			ledgerInclusionState = "migrated"
 
+			//nolint:forcetypeassert
 			receipt := msPayload.Receipt.(*iotago.Receipt)
+			//nolint:forcetypeassert
 			treasuryInput := receipt.Transaction.(*iotago.TreasuryTransaction).Input.(*iotago.TreasuryInput)
 
 			var addressBalanceOutputs int64
 			for _, input := range receipt.Funds {
+				//nolint:forcetypeassert
 				migratedFundEntry := input.(*iotago.MigratedFundsEntry)
+				//nolint:forcetypeassert
 				if migratedFundEntry.Address.(iotago.Address).String() != address.String() {
 					continue
 				}
