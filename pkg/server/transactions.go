@@ -83,6 +83,11 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 			referencedByMilestoneIndex = referencedIndex
 		}
 
+		milestoneTimestampReferenced, err := s.Database.MilestoneTimestampUnixByIndex(referencedByMilestoneIndex)
+		if err != nil {
+			return nil, err
+		}
+
 		ledgerInclusionState := "noTransaction"
 		conflict := msgMeta.Conflict()
 		var conflictReason *database.Conflict
@@ -96,7 +101,40 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 
 		txPayload := msg.Transaction()
 		if txPayload == nil {
-			return nil, fmt.Errorf("message does not contain a transaction payload: %s", messageID.ToHex())
+			// not a transaction payload. check if it is a milestone payload
+			msPayload := msg.Milestone()
+			if msPayload == nil || msPayload.Receipt == nil || msPayload.Receipt.(*iotago.Receipt).Transaction == nil {
+				return nil, fmt.Errorf("message does not contain a transaction or milestone payload: %s", messageID.ToHex())
+			}
+
+			// we need to signal that this was a migration from the legacy network
+			ledgerInclusionState = "migrated"
+
+			receipt := msPayload.Receipt.(*iotago.Receipt)
+			treasuryInput := receipt.Transaction.(*iotago.TreasuryTransaction).Input.(*iotago.TreasuryInput)
+
+			var addressBalanceOutputs int64
+			for _, input := range receipt.Funds {
+				migratedFundEntry := input.(*iotago.MigratedFundsEntry)
+				if migratedFundEntry.Address.(iotago.Address).String() != address.String() {
+					continue
+				}
+
+				addressBalanceOutputs += int64(migratedFundEntry.Deposit)
+			}
+
+			return &transactionHistoryItem{
+				MessageID:                    messageID.ToHex(),
+				TransactionID:                hex.EncodeToString(treasuryInput[:]), // milestone ID of the legacy network
+				ReferencedByMilestoneIndex:   referencedByMilestoneIndex,
+				MilestoneTimestampReferenced: milestoneTimestampReferenced,
+				LedgerInclusionState:         ledgerInclusionState,
+				ConflictReason:               conflictReason,
+				InputsCount:                  1,
+				OutputsCount:                 len(receipt.Funds),
+				AddressBalanceChange:         addressBalanceOutputs,
+			}, nil
+
 		}
 
 		transactionID, err := txPayload.ID()
@@ -150,11 +188,6 @@ func (s *DatabaseServer) transactionHistoryByAddress(c echo.Context, address iot
 			default:
 				return nil, fmt.Errorf("transaction contains an unsupported output type: msgID: %s", messageID.ToHex())
 			}
-		}
-
-		milestoneTimestampReferenced, err := s.Database.MilestoneTimestampUnixByIndex(referencedByMilestoneIndex)
-		if err != nil {
-			return nil, err
 		}
 
 		return &transactionHistoryItem{
